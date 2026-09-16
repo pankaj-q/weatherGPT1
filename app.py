@@ -111,15 +111,24 @@ def _refresh_weather(city: Location) -> None:
     now = time.time()
     if now - st.session_state.wg_last_fetch_ts < DATA_MAX_AGE_SECONDS:
         return
-    try:
-        st.session_state.wg_current = fetch_current_weather(city.lat, city.lon)
-        st.session_state.wg_daily = fetch_daily_forecast(city.lat, city.lon, 7)
-        st.session_state.wg_alerts = check_thresholds(
-            st.session_state.wg_current, st.session_state.wg_daily
-        )
-        st.session_state.wg_last_fetch_ts = now
-    except Exception as exc:
-        st.error(f"Failed to fetch weather data: {exc}")
+    last_err: Exception | None = None
+    for attempt in range(2):
+        try:
+            current = fetch_current_weather(city.lat, city.lon)
+            daily = fetch_daily_forecast(city.lat, city.lon, 7)
+            st.session_state.wg_current = current
+            st.session_state.wg_daily = daily
+            st.session_state.wg_alerts = check_thresholds(current, daily)
+            st.session_state.wg_last_fetch_ts = now
+            return
+        except Exception as exc:
+            last_err = exc
+            time.sleep(1.0 * (attempt + 1))
+    st.session_state.wg_last_fetch_ts = 0.0  # allow a retry on the next rerun
+    st.error(
+        f"⚠️ Couldn't reach Open-Meteo right now. {last_err or ''} "
+        "Live weather will retry automatically on your next interaction."
+    )
 
 
 def _force_refresh(city: Location) -> None:
@@ -311,10 +320,19 @@ if daily:
             unsafe_allow_html=True,
         )
         st.markdown(render_section_title("24h Temperature"), unsafe_allow_html=True)
-        hourly = hourly_temperature_series(city.lat, city.lon, hours=24)
+        try:
+            hourly = hourly_temperature_series(city.lat, city.lon, hours=24)
+        except Exception:
+            hourly = []
         if hourly:
             df_temp = pd.DataFrame(hourly, columns=["Hour", "Temp °C"])
             st.line_chart(df_temp.set_index("Hour"), width="stretch")
+        else:
+            st.markdown(
+                '<div style="font-size:13px;color:var(--wg-muted);padding-bottom:8px;">'
+                "⏳ Hourly data unavailable right now.</div>",
+                unsafe_allow_html=True,
+            )
         st.markdown("</div>", unsafe_allow_html=True)
     with col_rain:
         st.markdown(

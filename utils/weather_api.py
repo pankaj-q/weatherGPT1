@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+import time
 
 import requests
 
@@ -110,14 +111,28 @@ class Location:
         return ", ".join(parts)
 
 
-def _get_json(url: str, params: dict, timeout: int = 15) -> dict:
-    """GET a JSON payload, raising a readable error on failure."""
-    try:
-        response = requests.get(url, params=params, timeout=timeout)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as exc:
-        raise ConnectionError(f"Open-Meteo request failed: {exc}") from exc
+def _get_json(
+    url: str,
+    params: dict,
+    timeout: int = 25,
+    retries: int = 3,
+) -> dict:
+    """GET a JSON payload with retry-on-timeout, raising a readable error.
+
+    Open-Meteo occasionally stalls under load; retry with a short backoff
+    before giving up so a single slow response doesn't blank the page.
+    """
+    last_err: Exception | None = None
+    for attempt in range(retries):
+        try:
+            response = requests.get(url, params=params, timeout=timeout)
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as exc:
+            last_err = exc
+            if attempt < retries - 1:
+                time.sleep(1.0 * (attempt + 1))
+    raise ConnectionError(f"Open-Meteo request failed: {last_err}") from last_err
 
 
 def _find_preset(name: str) -> dict | None:

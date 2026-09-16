@@ -66,11 +66,14 @@ CSS = """
   --wg-red:        light-dark(#DC2626, #F87171);
   --wg-green:      light-dark(#059669, #34D399);
   --wg-border:     light-dark(#E2E8F0, #334155);
-  --wg-amber-bg:   light-dark(#FFFBEB, #451A03);
-  --wg-red-bg:     light-dark(#FEF2F2, #450A0A);
+  --wg-amber-bg:   light-dark(#FFF7DF, #78350F);
+  --wg-red-bg:     light-dark(#FEE2E2, #7F1D1D);
   --wg-green-bg:   light-dark(#ECFDF5, #052E16);
-  --wg-input-bg:   light-dark(#1E293B, #1E293B);
-  --wg-input-border: light-dark(#334155, #475569);
+  --wg-sidebar-bg: light-dark(#FFFFFF, #0F172A);
+  --wg-sidebar-text: light-dark(#334155, #CBD5E1);
+  --wg-sidebar-strong: light-dark(#0F172A, #FFFFFF);
+  --wg-input-bg:   light-dark(#F8FAFC, #1E293B);
+  --wg-input-border: light-dark(#CBD5E1, #475569);
 }
 
 /* Fallback for browsers without light-dark() — static light palette. */
@@ -85,11 +88,14 @@ CSS = """
     --wg-red:        #DC2626;
     --wg-green:      #059669;
     --wg-border:     #E2E8F0;
-    --wg-amber-bg:   #FFFBEB;
-    --wg-red-bg:     #FEF2F2;
+    --wg-amber-bg:   #FFF7DF;
+    --wg-red-bg:     #FEE2E2;
     --wg-green-bg:   #ECFDF5;
-    --wg-input-bg:   #1E293B;
-    --wg-input-border: #334155;
+    --wg-sidebar-bg: #FFFFFF;
+    --wg-sidebar-text: #334155;
+    --wg-sidebar-strong: #0F172A;
+    --wg-input-bg:   #F8FAFC;
+    --wg-input-border: #CBD5E1;
   }
 }
 
@@ -100,6 +106,28 @@ CSS = """
   letter-spacing: -0.01em;
 }
 header[data-testid="stHeader"] { background: var(--wg-bg); }
+
+/* ── Sidebar ────────────────────────────────────────────────────────────
+   Streamlit pins its own `color-scheme` onto the sidebar element, which
+   is independent of the app theme, so light-dark() would resolve against
+   the wrong palette there.  Forcing the sidebar to INHERIT the app's
+   color-scheme makes light-dark() track the real theme (and the Settings
+   toggle) just like the main content.  No JS / rerun required. */
+section[data-testid="stSidebar"] { color-scheme: inherit !important; }
+section[data-testid="stSidebar"] {
+  background: var(--wg-sidebar-bg) !important;
+  border-right: 1px solid var(--wg-border);
+}
+section[data-testid="stSidebar"] * { color: var(--wg-sidebar-text) !important; }
+section[data-testid="stSidebar"] .stMarkdown h2,
+section[data-testid="stSidebar"] .stMarkdown h3 { color: var(--wg-sidebar-strong) !important; }
+section[data-testid="stSidebar"] input[type="text"],
+section[data-testid="stSidebar"] select {
+  background: var(--wg-input-bg) !important;
+  color: var(--wg-sidebar-text) !important;
+  border: 1px solid var(--wg-input-border) !important;
+  border-radius: 8px;
+}
 
 /* ── Cards ──────────────────────────────────────────────────────────── */
 .wg-card {
@@ -194,7 +222,9 @@ header[data-testid="stHeader"] { background: var(--wg-bg); }
   animation: slideDown .3s ease;
 }
 .wg-alert-warning { background: var(--wg-red-bg); border-color: var(--wg-red); color: var(--wg-ink); }
+.wg-alert-warning strong { color: var(--wg-red); }
 .wg-alert-watch   { background: var(--wg-amber-bg); border-color: var(--wg-amber); color: var(--wg-ink); }
+.wg-alert-watch strong { color: var(--wg-amber); }
 
 /* ── Emergency broadcast button ─────────────────────────────────────── */
 .wg-btn-emergency {
@@ -316,66 +346,15 @@ header[data-testid="stHeader"] { background: var(--wg-bg); }
 """
 
 
-# ---------------------------------------------------------------------------
-# Sidebar theming.
-# Streamlit pins its own `color-scheme: dark` onto the sidebar element, so
-# `light-dark()` can't resolve against the app theme there.  Instead we drive
-# the sidebar palette from Python via st.context.theme.type (updates on every
-# rerun, which Streamlit triggers when the user switches theme in Settings).
-# ---------------------------------------------------------------------------
-_SIDEBAR_CSS_DARK = """
-<style>
-section[data-testid="stSidebar"] { background: #0F172A !important; }
-section[data-testid="stSidebar"] * { color: #CBD5E1 !important; }
-section[data-testid="stSidebar"] .stMarkdown h2,
-section[data-testid="stSidebar"] .stMarkdown h3 { color: #FFFFFF !important; }
-section[data-testid="stSidebar"] input[type="text"],
-section[data-testid="stSidebar"] select {
-  background: #1E293B !important;
-  color: #F1F5F9 !important;
-  border: 1px solid #334155 !important;
-  border-radius: 8px;
-}
-</style>
-"""
-
-_SIDEBAR_CSS_LIGHT = """
-<style>
-section[data-testid="stSidebar"] { background: #FFFFFF !important; }
-section[data-testid="stSidebar"] * { color: #334155 !important; }
-section[data-testid="stSidebar"] .stMarkdown h2,
-section[data-testid="stSidebar"] .stMarkdown h3 { color: #0F172A !important; }
-section[data-testid="stSidebar"] input[type="text"],
-section[data-testid="stSidebar"] select {
-  background: #F8FAFC !important;
-  color: #0F172A !important;
-  border: 1px solid #CBD5E1 !important;
-  border-radius: 8px;
-}
-</style>
-"""
-
-
-def _active_theme() -> str:
-    """Return Streamlit's active theme colour scheme: 'light' or 'dark'."""
-    import streamlit as st
-    try:
-        t = st.context.theme.type
-        return "dark" if t == "dark" else "light"
-    except Exception:
-        return "dark"
-
-
 def inject_css() -> None:
-    """Inject the global stylesheet, themed to match the Streamlit theme.
+    """Inject the global stylesheet once.  Call at the top of every page.
 
-    Call at the top of every page.  The main content area uses light-dark()
-    CSS (live updates); the sidebar is themed here because Streamlit pins its
-    own colour-scheme onto the sidebar element.
+    All theming is pure CSS via light-dark() plus forcing the sidebar to
+    inherit the app's color-scheme, so it follows the Streamlit theme
+    toggle live without any rerun or JavaScript.
     """
     import streamlit as st
-    sidebar = _SIDEBAR_CSS_DARK if _active_theme() == "dark" else _SIDEBAR_CSS_LIGHT
-    st.markdown(CSS + sidebar, unsafe_allow_html=True)
+    st.markdown(CSS, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
