@@ -12,6 +12,7 @@ import {
   type WeatherPayload,
 } from "@/lib/weather";
 import { GlassCard, SectionHeading } from "./ui";
+import FormatText from "./FormatText";
 
 function Bubble({ msg }: { msg: AiMessage }) {
   const user = msg.role === "user";
@@ -29,7 +30,7 @@ function Bubble({ msg }: { msg: AiMessage }) {
             : "glass rounded-bl-md rounded-3xl text-ink/90"
         }`}
       >
-        {msg.content}
+        {user ? msg.content : <FormatText text={msg.content} />}
       </div>
     </motion.div>
   );

@@ -1,26 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Languages, RefreshCw, Sparkles } from "lucide-react";
 import { GROQ_MODEL } from "@/lib/constants";
 import type { LocationMeta } from "@/lib/weather";
 import { GlassCard, SectionHeading, Spinner } from "./ui";
-
-function BulletRow({ text, i }: { text: string; i: number }) {
-  const clean = text.replace(/^[\s•*\-–—\d.)]+/, "").trim();
-  if (!clean) return null;
-  return (
-    <motion.li
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.05 + i * 0.06, duration: 0.4, ease: "easeOut" }}
-      className="flex items-start gap-3"
-    >
-      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gradient-to-r from-sky to-violet" />
-      <span className="text-[14px] leading-relaxed text-ink/90">{clean}</span>
-    </motion.li>
-  );
-}
+import FormatText from "./FormatText";
 
 export default function AdvisoryPanel({
   location,
@@ -89,13 +73,11 @@ export default function AdvisoryPanel({
           <div className="relative">
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo">
               <Sparkles className="h-3.5 w-3.5" />
-              AI Advisory
+              AI Advisory · {location.name}
             </div>
-            <ul className="mt-4 space-y-3">
-              {advisory
-                .split("\n")
-                .map((line, i) => <BulletRow key={i} text={line} i={i} />)}
-            </ul>
+            <div className="mt-4 text-[14px] text-ink/90">
+              <FormatText text={advisory} />
+            </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/8 pt-4">
               <span className="text-[11px] text-faint">
                 {location.name} · {lang} · {GROQ_MODEL}

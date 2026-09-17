@@ -43,8 +43,21 @@ export interface HourPoint {
   label: string;
 }
 
+/* IMD warning colour codes (india.gov.in / NDMA convention) */
+export const IMD_LEVELS = {
+  red: { code: "RED", label: "Take action", hint: "Act now to stay safe", emoji: "🔴" },
+  orange: { code: "ORANGE", label: "Be prepared", hint: "Expect possible impact", emoji: "🟠" },
+  yellow: { code: "YELLOW", label: "Be updated", hint: "Stay informed", emoji: "🟡" },
+} as const;
+
+export type ImdLevel = keyof typeof IMD_LEVELS;
+
+const heatLevel = (t: number): ImdLevel => (t >= 45 ? "red" : t >= 43 ? "orange" : "yellow");
+const rainLevel = (mm: number): ImdLevel => (mm >= 50 ? "red" : mm >= 30 ? "orange" : "yellow");
+const windLevel = (kmh: number): ImdLevel => (kmh >= 110 ? "red" : kmh >= 90 ? "orange" : "yellow");
+
 export interface AlertItem {
-  severity: "warning" | "watch";
+  severity: ImdLevel;
   title: string;
   message: string;
   day?: string;
@@ -82,7 +95,7 @@ interface DailyInput {
   rainProb: number;
 }
 
-/* IMD/NDMA-style threshold engine (mirror of utils/alerts.py) */
+/* NDMA/IMD threshold engine — raises Yellow/Orange/Red colour-coded alerts */
 export function computeAlerts(
   current: LiveInput,
   daily: DailyInput[],
@@ -91,25 +104,25 @@ export function computeAlerts(
 
   if (current.temp >= THRESHOLDS.heatwave) {
     alerts.push({
-      severity: "warning",
+      severity: heatLevel(current.temp),
       title: "Heatwave active",
-      message: `Current temperature is ${current.temp.toFixed(0)}C (feels ${current.feelsLike.toFixed(0)}C), above the ${THRESHOLDS.heatwave}C heatwave threshold.`,
+      message: `Temperature is ${current.temp.toFixed(0)}°C (feels ${current.feelsLike.toFixed(0)}°C) — above the ${THRESHOLDS.heatwave}°C heatwave threshold. Drink water and avoid the sun between 11am–4pm.`,
     });
   }
 
   if (current.wind >= THRESHOLDS.highWind) {
     alerts.push({
-      severity: "warning",
+      severity: windLevel(current.wind),
       title: "High wind alert",
-      message: `Wind speed is ${current.wind.toFixed(0)} km/h.`,
+      message: `Wind is gusting at ${current.wind.toFixed(0)} km/h. Secure loose objects and take care while travelling.`,
     });
   }
 
   if (current.uv >= THRESHOLDS.highUV) {
     alerts.push({
-      severity: "watch",
-      title: "Extreme UV index",
-      message: `UV index is ${current.uv.toFixed(0)}. Limit sun exposure 10am-4pm.`,
+      severity: "yellow",
+      title: "Very high UV index",
+      message: `UV index is ${current.uv.toFixed(0)}. Limit sun exposure between 10am–4pm and use protection.`,
     });
   }
 
@@ -118,44 +131,45 @@ export function computeAlerts(
 
     if (d.tMax >= THRESHOLDS.heatwave) {
       alerts.push({
-        severity: d.tMax >= 42 ? "warning" : "watch",
+        severity: heatLevel(d.tMax),
         title: `Heatwave on ${label}`,
-        message: `Max ${d.tMax.toFixed(0)}C forecast (threshold ${THRESHOLDS.heatwave}C).`,
+        message: `Maximum ${d.tMax.toFixed(0)}°C forecast (threshold ${THRESHOLDS.heatwave}°C). Stay hydrated and avoid afternoon heat.`,
         day: d.date,
       });
     }
 
     if (d.rain >= THRESHOLDS.heavyRain) {
       alerts.push({
-        severity: d.rain >= 25 ? "warning" : "watch",
+        severity: rainLevel(d.rain),
         title: `Heavy rain on ${label}`,
-        message: `Expected ${d.rain.toFixed(0)} mm precipitation (threshold ${THRESHOLDS.heavyRain} mm).`,
+        message: `About ${d.rain.toFixed(0)} mm rain expected (threshold ${THRESHOLDS.heavyRain} mm). Carry a raincoat and avoid waterlogged roads.`,
         day: d.date,
       });
     }
 
     if (d.wind >= THRESHOLDS.highWind) {
       alerts.push({
-        severity: d.wind >= 80 ? "warning" : "watch",
+        severity: windLevel(d.wind),
         title: `High wind on ${label}`,
-        message: `Wind up to ${d.wind.toFixed(0)} km/h.`,
+        message: `Wind up to ${d.wind.toFixed(0)} km/h expected. Secure roofs and stay indoors if possible.`,
         day: d.date,
       });
     }
 
     if (d.rainProb >= 60 && d.rain >= 10 && current.humidity >= THRESHOLDS.stormHumidity) {
       alerts.push({
-        severity: "watch",
+        severity: "yellow",
         title: `Storm risk on ${label}`,
-        message: `High humidity (${current.humidity.toFixed(0)}%) with rain expected.`,
+        message: `High humidity (${current.humidity.toFixed(0)}%) with rain expected — keep an eye on the sky.`,
         day: d.date,
       });
     }
   }
 
+  const priority: Record<ImdLevel, number> = { red: 0, orange: 1, yellow: 2 };
   return alerts.sort(
     (a, b) =>
-      (a.severity === "warning" ? 0 : 1) - (b.severity === "warning" ? 0 : 1) ||
+      priority[a.severity] - priority[b.severity] ||
       (a.day ?? "").localeCompare(b.day ?? ""),
   );
 }
@@ -240,9 +254,12 @@ export function weatherContext(loc: LocationMeta, w: WeatherPayload): string {
   }
   if (w.alerts.length) {
     const alertLines = w.alerts
-      .map((a) => `[${a.severity.toUpperCase()}] ${a.title}: ${a.message}`)
+      .map(
+        (a) =>
+          `[IMD ${IMD_LEVELS[a.severity].code} - ${IMD_LEVELS[a.severity].label}] ${a.title}: ${a.message}`,
+      )
       .join("\n");
-    lines.push(`\nActive alerts:\n${alertLines}`);
+    lines.push(`\nActive IMD alerts:\n${alertLines}`);
   }
   return lines.join("\n");
 }

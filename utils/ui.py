@@ -64,10 +64,12 @@ CSS = """
   --wg-muted:      light-dark(#64748B, #94A3B8);
   --wg-amber:      light-dark(#B45309, #FBBF24);
   --wg-red:        light-dark(#DC2626, #F87171);
+  --wg-orange:     light-dark(#EA580C, #FB923C);
   --wg-green:      light-dark(#059669, #34D399);
   --wg-border:     light-dark(#E2E8F0, #334155);
   --wg-amber-bg:   light-dark(#FFF7DF, #78350F);
   --wg-red-bg:     light-dark(#FEE2E2, #7F1D1D);
+  --wg-orange-bg:  light-dark(#FFEDD5, #7C2D12);
   --wg-green-bg:   light-dark(#ECFDF5, #052E16);
   --wg-sidebar-bg: light-dark(#FFFFFF, #0F172A);
   --wg-sidebar-text: light-dark(#334155, #CBD5E1);
@@ -86,10 +88,12 @@ CSS = """
     --wg-muted:      #64748B;
     --wg-amber:      #B45309;
     --wg-red:        #DC2626;
+    --wg-orange:     #EA580C;
     --wg-green:      #059669;
     --wg-border:     #E2E8F0;
     --wg-amber-bg:   #FFF7DF;
     --wg-red-bg:     #FEE2E2;
+    --wg-orange-bg:  #FFEDD5;
     --wg-green-bg:   #ECFDF5;
     --wg-sidebar-bg: #FFFFFF;
     --wg-sidebar-text: #334155;
@@ -221,10 +225,12 @@ section[data-testid="stSidebar"] select {
   font-weight: 500;
   animation: slideDown .3s ease;
 }
-.wg-alert-warning { background: var(--wg-red-bg); border-color: var(--wg-red); color: var(--wg-ink); }
-.wg-alert-warning strong { color: var(--wg-red); }
-.wg-alert-watch   { background: var(--wg-amber-bg); border-color: var(--wg-amber); color: var(--wg-ink); }
-.wg-alert-watch strong { color: var(--wg-amber); }
+.wg-alert-red    { background: var(--wg-red-bg);    border-color: var(--wg-red);    color: var(--wg-ink); }
+.wg-alert-red strong    { color: var(--wg-red); }
+.wg-alert-orange { background: var(--wg-orange-bg); border-color: var(--wg-orange); color: var(--wg-ink); }
+.wg-alert-orange strong { color: var(--wg-orange); }
+.wg-alert-yellow { background: var(--wg-amber-bg);  border-color: var(--wg-amber);  color: var(--wg-ink); }
+.wg-alert-yellow strong { color: var(--wg-amber); }
 
 /* ── Emergency broadcast button ─────────────────────────────────────── */
 .wg-btn-emergency {
@@ -290,9 +296,10 @@ section[data-testid="stSidebar"] select {
   font-size: 12px;
   font-weight: 600;
 }
-.wg-status-pill-amber { background: var(--wg-amber-bg); color: var(--wg-amber); }
-.wg-status-pill-red   { background: var(--wg-red-bg);   color: var(--wg-red); }
-.wg-status-pill-green { background: var(--wg-green-bg); color: var(--wg-green); }
+.wg-status-pill-amber  { background: var(--wg-amber-bg);  color: var(--wg-amber); }
+.wg-status-pill-orange { background: var(--wg-orange-bg); color: var(--wg-orange); }
+.wg-status-pill-red    { background: var(--wg-red-bg);    color: var(--wg-red); }
+.wg-status-pill-green  { background: var(--wg-green-bg);  color: var(--wg-green); }
 
 /* ── Skeleton loader (advisory shimmer) ─────────────────────────────── */
 .wg-skeleton {
@@ -366,7 +373,7 @@ def render_section_title(text: str) -> str:
 
 
 def render_alert_banner(alert: Alert) -> str:
-    cls = "wg-alert-warning" if alert.severity == "warning" else "wg-alert-watch"
+    cls = f"wg-alert-{alert.severity}"
     icon = alert.emoji
     day_tag = f"<span style='font-size:12px;opacity:.7;margin-left:8px;'>{alert.day or ''}</span>" if alert.day else ""
     return (
@@ -385,17 +392,18 @@ def render_status_bar(
 ) -> str:
     """A single summary line tying ①②③ together."""
     top = next(iter(alerts), None)
-    if top and top.severity == "warning":
-        pill = f'<span class="wg-status-pill wg-status-pill-red">{top.emoji} {top.title}</span>'
-    elif top and top.severity == "watch":
-        pill = f'<span class="wg-status-pill wg-status-pill-amber">{top.emoji} {top.title}</span>'
+    pill_color = {"red": "red", "orange": "orange", "yellow": "amber"}.get(
+        top.severity if top else "", ""
+    )
+    if pill_color:
+        pill = f'<span class="wg-status-pill wg-status-pill-{pill_color}">{top.emoji} {top.title}</span>'
     else:
         pill = '<span class="wg-status-pill wg-status-pill-green">✅ No alerts</span>'
 
     return (
         f'<div class="wg-status-bar">'
         f"<span><strong>{city_label}</strong></span>"
-        f"<span>Now: {_weather_emoji(current.weather_code)} {current.temperature_c:.0f}C "
+        f"<span>Now: {_weather_emoji(current.weather_code)} {current.temperature_c:.0f}°C "
         f"· Wind {current.wind_speed_kmh:.0f} km/h</span>"
         f"{pill}"
         f"<span style='margin-left:auto;font-size:12px;'>Updated {updated_label}</span>"

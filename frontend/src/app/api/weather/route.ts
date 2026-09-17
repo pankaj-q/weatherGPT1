@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { get as httpsGet } from "node:https";
+import { get as httpGet } from "node:http";
 import { conditionFor } from "../../../lib/conditions";
 import {
   computeAlerts,
@@ -21,18 +23,69 @@ interface DailyInput {
   rainProb: number;
 }
 
+/* Some networks hand out a NAT64 AAAA address for api.open-meteo.com that
+   Node's fetch (undici) black-holes on. Pin the connection to IPv4 via the
+   node:https stack as a reliable fallback. */
+function secureRequestJson(
+  url: string,
+  timeoutMs: number,
+): Promise<Record<string, unknown>> {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const lib = target.protocol === "https:" ? httpsGet : httpGet;
+    const req = lib(
+      {
+        hostname: target.hostname,
+        port: target.port || undefined,
+        path: target.pathname + target.search,
+        family: 4,
+        headers: { accept: "application/json" },
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (c) => chunks.push(c));
+        res.on("end", () => {
+          const body = Buffer.concat(chunks).toString("utf8");
+          if (res.statusCode && res.statusCode >= 400) {
+            reject(new Error(`Open-Meteo responded ${res.statusCode}`));
+          } else {
+            try {
+              resolve(JSON.parse(body) as Record<string, unknown>);
+            } catch {
+              reject(new Error("Invalid JSON from Open-Meteo"));
+            }
+          }
+        });
+      },
+    );
+    req.setTimeout(timeoutMs, () => req.destroy(new Error("Open-Meteo request timed out")));
+    req.on("error", (err) => reject(err));
+  });
+}
+
+async function fetchWithFallback(
+  url: string,
+  timeoutMs: number,
+): Promise<Record<string, unknown>> {
+  try {
+    const res = await fetch(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      throw new Error(`Open-Meteo responded ${res.status}`);
+    }
+    return (await res.json()) as Record<string, unknown>;
+  } catch {
+    return secureRequestJson(url, timeoutMs);
+  }
+}
+
 async function fetchJson(url: string, timeoutMs = 25000): Promise<Record<string, unknown>> {
   let lastErr: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(timeoutMs),
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        throw new Error(`Open-Meteo responded ${res.status}`);
-      }
-      return (await res.json()) as Record<string, unknown>;
+      return await fetchWithFallback(url, timeoutMs);
     } catch (err) {
       lastErr = err instanceof Error ? err : new Error(String(err));
       if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));

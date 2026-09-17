@@ -24,9 +24,13 @@ from utils.weather_api import CurrentWeather, ForecastDay
 
 @dataclass
 class Alert:
-    """A single weather alert raised by the threshold engine."""
+    """A single weather alert raised by the threshold engine.
 
-    severity: str          # "warning" | "watch"
+    ``severity`` uses the IMD colour-code convention:
+    yellow = "be updated", orange = "be prepared", red = "take action".
+    """
+
+    severity: str          # "yellow" | "orange" | "red"
     title: str             # short label
     message: str           # longer explanation
     day: str | None = None  # date str if daily, None if live
@@ -37,11 +41,25 @@ class Alert:
 
     @property
     def color(self) -> str:
-        return "red" if self.severity == "warning" else "amber"
+        return {"red": "red", "orange": "orange", "yellow": "yellow"}.get(
+            self.severity, "yellow"
+        )
 
     @property
     def emoji(self) -> str:
-        return {"warning": "🔴", "watch": "🟠"}.get(self.severity, "🟡")
+        return {"red": "🔴", "orange": "🟠", "yellow": "🟡"}.get(self.severity, "🟡")
+
+
+def _heat_level(temp_c: float) -> str:
+    return "red" if temp_c >= 45.0 else ("orange" if temp_c >= 43.0 else "yellow")
+
+
+def _rain_level(mm: float) -> str:
+    return "red" if mm >= 50.0 else ("orange" if mm >= 30.0 else "yellow")
+
+
+def _wind_level(kmh: float) -> str:
+    return "red" if kmh >= 110.0 else ("orange" if kmh >= 90.0 else "yellow")
 
 
 @dataclass
@@ -81,27 +99,30 @@ def check_thresholds(
     # --- Live condition alerts ---
     if current.temperature_c >= HEATWAVE_TEMP_C:
         alerts.append(Alert(
-            severity="warning",
+            severity=_heat_level(current.temperature_c),
             title="Heatwave active",
             message=(
-                f"Current temperature is {current.temperature_c:.0f}C "
-                f"(feels {current.feels_like_c:.0f}C), exceeding the "
-                f"{HEATWAVE_TEMP_C:.0f}C heatwave threshold."
+                f"Temperature is {current.temperature_c:.0f}°C "
+                f"(feels {current.feels_like_c:.0f}°C), above the "
+                f"{HEATWAVE_TEMP_C:.0f}°C heatwave threshold. Drink water and "
+                f"avoid the sun between 11am-4pm."
             ),
         ))
 
     if current.wind_speed_kmh >= HIGH_WIND_KMH:
         alerts.append(Alert(
-            severity="warning",
+            severity=_wind_level(current.wind_speed_kmh),
             title="High wind alert",
-            message=f"Wind speed is {current.wind_speed_kmh:.0f} km/h.",
+            message=f"Wind is gusting at {current.wind_speed_kmh:.0f} km/h. "
+                    f"Secure loose objects and take care while travelling.",
         ))
 
     if current.uv_index >= HIGH_UV_INDEX:
         alerts.append(Alert(
-            severity="watch",
-            title="Extreme UV index",
-            message=f"UV index is {current.uv_index:.0f}. Limit sun exposure 10am-4pm.",
+            severity="yellow",
+            title="Very high UV index",
+            message=f"UV index is {current.uv_index:.0f}. Limit sun exposure "
+                    f"between 10am-4pm and use protection.",
         ))
 
     # --- Daily forecast alerts ---
@@ -110,25 +131,30 @@ def check_thresholds(
 
         if day.temp_max_c >= HEATWAVE_TEMP_C:
             alerts.append(Alert(
-                severity="warning" if day.temp_max_c >= 42.0 else "watch",
+                severity=_heat_level(day.temp_max_c),
                 title=f"Heatwave on {label}",
-                message=f"Max {day.temp_max_c:.0f}C forecast (threshold {HEATWAVE_TEMP_C:.0f}C).",
+                message=f"Maximum {day.temp_max_c:.0f}°C forecast (threshold "
+                        f"{HEATWAVE_TEMP_C:.0f}°C). Stay hydrated and avoid "
+                        f"afternoon heat.",
                 day=day.date,
             ))
 
         if day.precipitation_mm >= HEAVY_RAIN_MM:
             alerts.append(Alert(
-                severity="warning" if day.precipitation_mm >= 25.0 else "watch",
+                severity=_rain_level(day.precipitation_mm),
                 title=f"Heavy rain on {label}",
-                message=f"Expected {day.precipitation_mm:.0f} mm precipitation (threshold {HEAVY_RAIN_MM:.0f} mm).",
+                message=f"About {day.precipitation_mm:.0f} mm rain expected "
+                        f"(threshold {HEAVY_RAIN_MM:.0f} mm). Carry a raincoat "
+                        f"and avoid waterlogged roads.",
                 day=day.date,
             ))
 
         if day.wind_speed_kmh >= HIGH_WIND_KMH:
             alerts.append(Alert(
-                severity="warning" if day.wind_speed_kmh >= 80.0 else "watch",
+                severity=_wind_level(day.wind_speed_kmh),
                 title=f"High wind on {label}",
-                message=f"Wind up to {day.wind_speed_kmh:.0f} km/h.",
+                message=f"Wind up to {day.wind_speed_kmh:.0f} km/h expected. "
+                        f"Secure roofs and stay indoors if possible.",
                 day=day.date,
             ))
 
@@ -138,14 +164,15 @@ def check_thresholds(
             and current.relative_humidity_pct >= STORM_HUMIDITY_PCT
         ):
             alerts.append(Alert(
-                severity="watch",
+                severity="yellow",
                 title=f"Storm risk on {label}",
-                message=f"High humidity ({current.relative_humidity_pct:.0f}%) with rain expected.",
+                message=f"High humidity ({current.relative_humidity_pct:.0f}%) "
+                        f"with rain expected. Keep an eye on the sky.",
                 day=day.date,
             ))
 
-    _priority = {"warning": 0, "watch": 1}
-    alerts.sort(key=lambda a: (_priority.get(a.severity, 2), a.day or ""))
+    _priority = {"red": 0, "orange": 1, "yellow": 2}
+    alerts.sort(key=lambda a: (_priority.get(a.severity, 3), a.day or ""))
     return alerts
 
 
