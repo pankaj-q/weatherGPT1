@@ -37,6 +37,44 @@ Open `http://localhost:8501` in your browser.
 
 ---
 
+## Premium frontend (`/frontend`)
+
+A self-contained demo UI built with Next.js + Framer Motion — dark aurora
+design, glass-morphism cards, Sora/Inter typography, live AI advisory and a
+bilingual chat. Same data source (Open-Meteo) and same LLM (Groq).
+
+```bash
+cd frontend
+
+# 1. Install dependencies
+npm install
+
+# 2. Point to the same Groq key (server-side only, never exposed to the client)
+cp ../.env .env.local
+echo "GROQ_MODEL=qwen/qwen3.8-27b" >> .env.local
+
+# 3. Run (dev) or build + serve (prod)
+npm run dev          # http://localhost:3000
+npm run build && npm start
+```
+
+Structure:
+
+```
+frontend/
+├── src/app/
+│   ├── layout.tsx / page.tsx / globals.css
+│   └── api/
+│       ├── weather/   # Open-Meteo proxy (current + 12h + 7-day + alerts)
+│       ├── geocode/   # city search (presets + Open-Meteo geocoding)
+│       └── ai/        # Groq proxy (auto-detect language)
+├── src/components/    # AuroraBackground, CurrentHero, ForecastStrip,
+│                      # AlertPanel, AdvisoryPanel, ChatPanel, Sidebar, …
+└── src/lib/           # constants, WMO conditions, types, client fetchers
+```
+
+---
+
 ## Project structure
 
 ```
