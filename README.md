@@ -1,61 +1,119 @@
-# 🌤️ WeatherGPT — Conversational Weather Intelligence for India
+# 🌤️ WeatherGPT
 
-**Live weather, IMD colour-coded warnings, and an AI assistant that answers in
-English, Hindi, or Hinglish.**
+**A weather app that doesn't just tell you the temperature — it tells you what to do.**
 
-WeatherGPT answers three questions on every screen:
+WeatherGPT is a weather assistant built for India. It shows live conditions,
+a clear forecast, official-style weather warnings, and a short AI-written
+advisory that explains what the weather means for your day — in **English,
+Hindi, or Hinglish**.
 
-1. **What's happening now?** — live current conditions (Open-Meteo)
-2. **What might happen next?** — 12-hour + 7-day forecast with IMD/NDMA-style,
-   colour-coded warnings
-3. **What should I do?** — AI-generated advisory via Groq (English or Hindi)
+> **Live demo:** https://weather-gpt-1-ruby.vercel.app
 
-The project ships **two UIs** that share the same data source and LLM:
+---
 
-| App | Stack | URL |
+## What does it do?
+
+Open the app and you immediately get answers to three simple questions:
+
+| Question | What you see |
+|---|---|
+| **What's happening now?** | Today's temperature, how it feels, humidity, wind, rain and UV for your city |
+| **What's coming next?** | An hour-by-hour view of the next 12 hours and a 7-day forecast |
+| **What should I do?** | A short AI-written advisory with practical advice — carry an umbrella, avoid the afternoon sun, and so on |
+
+There is also a **chat** where you can ask anything about the weather, in your
+own words and your own language.
+
+---
+
+## Who is it for?
+
+- **Everyday users** who want to know how the weather will affect their day.
+- **Students and researchers** who need live weather data plus a natural-language explanation.
+- **Anyone preparing for severe weather** who wants warnings in a format they can act on.
+
+No sign-up, no downloads, no weather account required.
+
+---
+
+## Key features
+
+- **Live weather data** — official open data, updated in real time.
+- **IMD colour-coded warnings** — the same Yellow / Orange / Red system used by
+  the India Meteorological Department, so the urgency is instantly clear.
+- **AI advisory in your language** — English, Hindi, or Hinglish, with correct
+  numbers and units (°C, km/h, %) and no confusing symbols.
+- **Chat that understands India** — ask about Varanasi, Delhi, Mumbai, Chennai,
+  Bengaluru or Lucknow, or search any other place.
+- **Works everywhere** — a clean, fast layout for both phone and computer.
+- **Emergency broadcast demo** — a simulated alert system that shows how
+  warnings could be sent to the public by SMS, email or app notification.
+
+---
+
+## IMD colour codes explained
+
+India's weather office uses four colours to describe danger. WeatherGPT shows
+the same colours so you know how seriously to take a warning:
+
+| Colour | Meaning | What to do |
 |---|---|---|
-| **Streamlit app** (root) | Python + Streamlit | `http://localhost:8501` |
-| **Premium web UI** (`/frontend`) | Next.js + Framer Motion | `http://localhost:3000` |
+| 🟢 **GREEN** | All clear | No action needed |
+| 🟡 **YELLOW** | Be updated | Stay informed; weather may change |
+| 🟠 **ORANGE** | Be prepared | Get ready for possible disruption |
+| 🔴 **RED** | Take action | Dangerous conditions — act now |
+
+Warnings are triggered automatically from the forecast — for example, extreme
+heat, very heavy rain, strong winds, or high UV.
 
 ---
 
-## Highlights
+## Two versions in this project
 
-- **Live data** straight from Open-Meteo — no weather API key required.
-- **IMD colour-warning system** — YELLOW · Be updated / ORANGE · Be prepared /
-  RED · Take action, plus GREEN when all clear (aligned with IMD conventions).
-- **AI advisor & chat (Groq)** — auto-detects Hindi vs English; answers in
-  clean Devanagari Hindi, English, or Hinglish with no markdown noise, correct
-  numbers, and exact °C/km/h/% units.
-- **Preset cities** that load instantly: Varanasi, Delhi, Mumbai, Chennai,
-  Bengaluru, Lucknow (plus free-text geocoding for anywhere).
-- **Emergency broadcast simulator** (Streamlit) — simulated SMS/email/push
-  alerts for disaster-warning demos.
-- **Dark aurora / glassmorphism design** (frontend) with Sora + Inter
-  typography and Framer Motion animations.
+The project includes two user interfaces that share the same live data and the
+same AI:
+
+| Version | Best for | Technology |
+|---|---|---|
+| **Streamlit app** (project root) | Quick local use, data dashboard and demos | Python + Streamlit |
+| **Web app** (`/frontend`) | A polished, mobile-friendly public website | Next.js (React) + Framer Motion |
+
+Both versions show the same three answers, warnings and AI advisory.
 
 ---
 
-## Quick start — Streamlit app
+## Try it online
+
+The web app is already deployed and free to use:
+
+**https://weather-gpt-1-ruby.vercel.app**
+
+Open it on your phone or laptop — no setup required.
+
+---
+
+## Run it on your computer
+
+### Option 1 — Streamlit app
 
 ```bash
-# 1. Create the virtual environment
+# 1. Create a virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
 # 2. Install dependencies
 pip3 install -r requirements.txt
 
-# 3. Configure your Groq API key
-cp .env.example .env       # then edit .env and paste your GROQ_API_KEY
+# 3. Add your AI key (optional — weather works without it)
+cp .env.example .env        # then edit .env and paste your GROQ_API_KEY
 
-# 4. Run the app
+# 4. Start the app
 python3 -m streamlit run app.py
 ```
 
-Open `http://localhost:8501` in your browser.
+Then open `http://localhost:8501`.
 
-## Quick start — Premium web UI
+### Option 2 — Web app
 
 ```bash
 cd frontend
@@ -63,32 +121,34 @@ cd frontend
 # 1. Install dependencies
 npm install
 
-# 2. Point to the same Groq key (kept server-side, never sent to the browser)
-cp ../.env .env.local
-echo "GROQ_MODEL=qwen/qwen3.8-27b" >> .env.local
+# 2. Add your AI key (optional — weather works without it)
+cp ../.env .env.local       # then set GROQ_API_KEY inside .env.local
 
-# 3. Run (dev) or build + serve (prod)
-npm run dev                 # http://localhost:3000
-npm run build && npm start  # production
+# 3. Start it
+npm run dev
 ```
 
-> Weather data works with **no API key**. Only the AI advisory and chat
-> features need `GROQ_API_KEY`. The model defaults to `qwen/qwen3.8-27b`
-> (settable with `GROQ_MODEL` in `frontend/.env.local`).
+Then open `http://localhost:3000`.
+
+> **Note:** Weather and forecast data work with **no key at all**. Only the AI
+> advisory and chat need a free `GROQ_API_KEY`.
 
 ---
 
-## IMD warning colours
+## How it works (in one picture)
 
-Weather alerts use the India Meteorological Department colour convention:
-
-| Colour | Action | Trigger (examples) |
-|---|---|---|
-| 🟡 **YELLOW** | Be updated — stay informed | Max ≥ 40°C, rain ≥ 15 mm, wind ≥ 60 km/h, UV ≥ 9 |
-| 🟠 **ORANGE** | Be prepared for possible impact | Max ≥ 43°C, rain ≥ 30 mm, wind ≥ 90 km/h |
-| 🔴 **RED** | Take action — act now | Max ≥ 45°C, rain ≥ 50 mm, wind ≥ 110 km/h |
-
-Neither app sends real notifications — alerts are shown in-app only.
+```
+        Live weather data (Open-Meteo, no key needed)
+                          │
+                          ▼
+        Warnings engine  ──►  IMD colour rules (Green/Yellow/Orange/Red)
+                          │
+                          ▼
+        AI assistant (Groq)  ──►  Plain-language advisory + chat
+                          │
+                          ▼
+        Your screen  ──►  Streamlit app  OR  Web app
+```
 
 ---
 
@@ -96,87 +156,56 @@ Neither app sends real notifications — alerts are shown in-app only.
 
 ```
 weatherGPT1/
-├── app.py                  # Streamlit main page: zones ①②③ + chat
-├── config.py               # Constants (cities, thresholds, model, tokens)
-├── requirements.txt
-├── .env.example            # GROQ_API_KEY template
-├── PRD.md                  # Product requirements document
-├── techstack.md            # Technology stack decisions
+├── app.py                  # Streamlit app — main screen
+├── config.py               # Cities, warning thresholds and settings
 ├── utils/
-│   ├── weather_api.py      # Open-Meteo client (geocoding, current, forecast)
-│   ├── alerts.py           # IMD threshold engine + simulated broadcast
-│   ├── grok_client.py      # Groq LLM (function calling, advisory, language)
-│   ├── prompts.py          # Centralised prompts + tool schema
-│   └── ui.py               # CSS tokens (light/dark) + HTML render helpers
-├── pages/
-│   ├── 1_📍_Dashboard.py   # Data-dense dashboard with charts
-│   └── 2_💬_Chat.py        # Full-screen conversation
-└── frontend/               # Premium Next.js web UI (see its README)
-```
-
-### Frontend (Next.js)
-
-```
-frontend/
-├── src/app/
-│   ├── layout.tsx          # Fonts (Sora, Inter), metadata
-│   ├── page.tsx            # Main dashboard: hero, forecast, alerts, AI & chat
-│   ├── globals.css         # @theme tokens, aurora/glass/shimmer styles
-│   └── api/
-│       ├── weather/        # Open-Meteo proxy (current + 12h + 7-day + alerts)
-│       ├── geocode/        # city search (presets + Open-Meteo geocoding)
-│       └── ai/             # Groq proxy — advisory + chat (autodetect language)
-├── src/components/         # AuroraBackground, CurrentHero, ForecastStrip,
-│                           # AlertPanel (IMD), AdvisoryPanel, ChatPanel,
-│                           # Sidebar, LiveClock, ConditionIcon, CountUp,
-│                           # FormatText (clean answer renderer), ui
-└── src/lib/
-    ├── ai.ts               # prompts + Groq call (server-only)
-    ├── constants.ts        # presets, thresholds, model, quick prompts
-    ├── conditions.ts       # WMO weather-code → label/icon mapping
-    └── weather.ts          # types, IMD alerts, client fetchers
+│   ├── weather_api.py      # Fetches live weather data
+│   ├── alerts.py           # Builds colour-coded warnings
+│   ├── grok_client.py      # Talks to the AI
+│   ├── prompts.py          # Instructions that make the AI answer well
+│   └── ui.py               # Look and feel (colours, cards, banners)
+├── pages/                  # Extra Streamlit pages (dashboard, full chat)
+└── frontend/               # The web app (Next.js)
 ```
 
 ---
 
-## Demo scenarios
+## Technology used
 
-### Streamlit app
-
-| # | Do this | Expected |
+| Layer | Technology | Why |
 |---|---|---|
-| 1 | Open the app | Varanasi loads instantly — zones ①②③ render |
-| 2 | Sidebar → search "Mumbai" | Current + 7-day forecast swap to Mumbai |
-| 3 | Chat: "Weather in Delhi today" | Groq calls `get_weather` and answers from live data |
-| 4 | Chat: "मुंबई का मौसम बताओ" | Hindi reply (Devanagari, clean formatting) |
-| 5 | Chat: "Will it rain this week?" | 7-day forecast with rainy days highlighted |
-| 6 | Sidebar → 🚨 Send emergency broadcast | Toast + log entry (simulated SMS/email/push) |
-| 7 | Dashboard page | Charts + detailed table + broadcast history |
-
-### Premium web UI
-
-| # | Do this | Expected |
-|---|---|---|
-| 1 | Open `http://localhost:3000` | Varanasi loads live with aurora/glass UI |
-| 2 | Pick a quick city or search | Hero, 12-hour + 7-day forecast, alerts update |
-| 3 | Watch the advisor | AI advisory auto-generates (English ↔ Hindi) |
-| 4 | Chat: "कल का मौसम बताओ" | Clean Devanagari answer with °C/km/h/% |
-| 5 | Ask about Mumbai while on Varanasi | Honest reply naming the preset cities |
-| 6 | Shrink the window | Mobile layout with slide-in sidebar drawer |
+| Weather data | Open-Meteo | Free, no key, accurate global coverage |
+| AI | Groq (Qwen model) | Fast responses, good Hindi support |
+| Streamlit app | Python + Streamlit | Quick to build and demo |
+| Web app | Next.js + React + Tailwind | Fast, modern, mobile-friendly |
+| Hosting | Vercel | One-click deployment for the web app |
 
 ---
 
-## Data & privacy
+## Data, privacy and honesty
 
-- **Open-Meteo** — free, no API key, up to 10,000 calls/day (CC BY 4.0).
-- **Groq** — your key is read from `.env` / `frontend/.env.local` only and is
-  **never committed** (both are gitignored). In the web UI the key stays
-  server-side inside the `/api/ai` route.
-- The emergency broadcast is **simulated** — no real messages are sent.
+- **Weather data** comes from Open-Meteo, a free public service (CC BY 4.0).
+- **Your AI key is private** — it is stored in a local `.env` file and never shared.
+- **Emergency broadcasts are simulated.** No real messages are sent.
+- The AI is given the live weather numbers first, so its advice is based on real
+  data — not guesswork.
 
 ---
 
-## Future path (post-MVP)
+## What's next
 
-FastAPI backend, WIS2.0/MQTT ingestion, PostgreSQL/MongoDB, WebSockets,
-Docker/K8s, voice I/O, more Indian languages. See `techstack.md` for details.
+Planned improvements for the future:
+
+- A proper API backend with real-time push alerts.
+- More Indian languages.
+- Voice input and spoken replies.
+- Official government alert feeds (IMD / NDMA).
+- Mobile app with background warnings.
+
+---
+
+## Credits
+
+- Weather data: [Open-Meteo](https://open-meteo.com)
+- AI: [Groq](https://groq.com)
+- Warning colour convention: India Meteorological Department (IMD)
