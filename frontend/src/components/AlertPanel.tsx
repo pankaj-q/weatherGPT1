@@ -50,7 +50,7 @@ export default function AlertPanel({ alerts }: { alerts: AlertItem[] }) {
             initial={{ opacity: 0, x: -14 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.07, duration: 0.4, ease: "easeOut" }}
-            className={`rounded-2xl border bg-white/[0.03] p-4 backdrop-blur-xl ${style.border}`}
+            className={`rounded-2xl border bg-white/[0.03] p-4 backdrop-blur-none lg:backdrop-blur-xl ${style.border}`}
             style={{
               borderLeftWidth: 4,
               borderLeftColor: style.left,

@@ -67,9 +67,10 @@
 }
 
 @layer components {
-  /* Frosted-glass panel */
+  /* Frosted-glass panel — backdrop blur only on desktop; on mobile it is a
+     scroll-jank hotspot, so cards fall back to a flat translucent surface. */
   .glass {
-    @apply backdrop-blur-xl;
+    @apply backdrop-blur-none lg:backdrop-blur-xl;
     background: linear-gradient(
       180deg,
       rgba(255, 255, 255, 0.055),
@@ -82,7 +83,7 @@
   }
 
   .glass-strong {
-    @apply backdrop-blur-2xl;
+    @apply backdrop-blur-none lg:backdrop-blur-2xl;
     background: linear-gradient(
       180deg,
       rgba(15, 23, 42, 0.72),

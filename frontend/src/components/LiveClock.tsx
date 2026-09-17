@@ -32,7 +32,7 @@ export default function LiveClock({
 
   if (now === null) {
     return (
-      <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm backdrop-blur-xl">
+      <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm backdrop-blur-none lg:backdrop-blur-xl">
         <span className="h-2 w-2 rounded-full bg-fresh/40" />
         <span className="font-mono text-ink">--:--:--</span>
       </div>
@@ -55,7 +55,7 @@ export default function LiveClock({
   });
 
   return (
-    <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm backdrop-blur-xl">
+    <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs sm:px-4 sm:py-2 sm:text-sm backdrop-blur-none lg:backdrop-blur-xl">
       <span className="relative flex h-2 w-2">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-fresh opacity-70" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-fresh" />

@@ -69,7 +69,7 @@ export default function AdvisoryPanel({
         </GlassCard>
       ) : advisory ? (
         <GlassCard className="relative overflow-hidden p-7">
-          <div className="pointer-events-none absolute -top-20 -right-16 h-48 w-48 rounded-full bg-indigo/20 blur-[80px]" />
+          <div className="pointer-events-none absolute -top-20 -right-16 h-48 w-48 bg-[radial-gradient(circle_at_center,rgba(129,140,248,0.20),transparent_70%)]" />
           <div className="relative">
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-indigo">
               <Sparkles className="h-3.5 w-3.5" />

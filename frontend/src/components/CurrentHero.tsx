@@ -39,8 +39,8 @@ export default function CurrentHero({ weather }: { weather: WeatherPayload }) {
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
     >
       <GlassCard className="relative overflow-hidden p-6 lg:p-10">
-        <div className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 rounded-full bg-sky/25 blur-[100px]" />
-        <div className="pointer-events-none absolute -bottom-40 -left-24 h-72 w-72 rounded-full bg-violet/20 blur-[110px]" />
+        <div className="pointer-events-none absolute -top-32 -right-24 h-72 w-72 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.25),transparent_70%)]" />
+        <div className="pointer-events-none absolute -bottom-40 -left-24 h-72 w-72 bg-[radial-gradient(circle_at_center,rgba(167,139,250,0.20),transparent_70%)]" />
 
         <div className="relative flex flex-col items-start gap-10 lg:flex-row lg:items-center">
           {/* Identity + temperature */}

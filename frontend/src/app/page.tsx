@@ -143,7 +143,7 @@ export default function Home() {
       <AuroraBackground />
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/5 bg-void/70 px-4 py-3 backdrop-blur-xl lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-white/5 bg-void/90 px-4 py-3 lg:hidden">
         <button
           onClick={() => setSidebarOpen(true)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-ink"
